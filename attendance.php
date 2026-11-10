@@ -9,12 +9,10 @@ $message = '';
 $message_type = '';
 $statuses = ['present', 'absent', 'late', 'excused'];
 
-// Classrooms owned by this teacher
 $cs = $pdo->prepare("SELECT id, name FROM classrooms WHERE teacher_id = ? ORDER BY name");
 $cs->execute([$teacher_id]);
 $classrooms = $cs->fetchAll();
 
-// Enrolled students in this teacher's classrooms (one row per classroom/student pair)
 $ss = $pdo->prepare("
     SELECT cs.classroom_id, u.id, u.first_name, u.last_name
     FROM classroom_students cs
@@ -26,7 +24,6 @@ $ss = $pdo->prepare("
 $ss->execute([$teacher_id]);
 $enrolled = $ss->fetchAll();
 
-// Shared validation for create + update. Returns an error string or null.
 function validateAttendance($pdo, $teacher_id, $in, $statuses) {
     if (!ctype_digit($in['classroom_id']) || !ctype_digit($in['student_id'])) {
         return "Please select a classroom and a student.";
@@ -63,7 +60,6 @@ function attendanceInput() {
     ];
 }
 
-// ---------- CREATE ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_attendance'])) {
     $in = attendanceInput();
     $error = validateAttendance($pdo, $teacher_id, $in, $statuses);
@@ -87,7 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_attendance'])) {
     }
 }
 
-// ---------- UPDATE ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_attendance'])) {
     $id = postVal('id');
     $in = attendanceInput();
@@ -112,7 +107,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_attendance']))
     }
 }
 
-// ---------- DELETE (POST + confirm prompt) ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_attendance'])) {
     $id = postVal('id');
     if (ctype_digit($id)) {
@@ -131,7 +125,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_attendance']))
     }
 }
 
-// ---------- READ: record being edited ----------
 $edit = null;
 if (isset($_GET['edit']) && ctype_digit($_GET['edit'])) {
     $st = $pdo->prepare("SELECT * FROM attendance WHERE id = ? AND teacher_id = ?");
@@ -140,7 +133,6 @@ if (isset($_GET['edit']) && ctype_digit($_GET['edit'])) {
 }
 $v = $edit ?: ['id' => '', 'classroom_id' => '', 'student_id' => '', 'attendance_date' => date('Y-m-d'), 'status' => 'present', 'remarks' => ''];
 
-// ---------- READ: list with search / filters ----------
 $f_q         = getVal('q');
 $f_classroom = getVal('f_classroom');
 $f_status    = getVal('f_status');
@@ -296,7 +288,6 @@ flashMessage($message, $message_type);
 </div>
 
 <script>
-// Show only the students enrolled in the chosen classroom
 (function () {
     var classroom = document.getElementById('classroom_id');
     var student = document.getElementById('student_id');

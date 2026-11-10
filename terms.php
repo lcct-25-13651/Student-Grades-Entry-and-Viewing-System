@@ -14,7 +14,6 @@ function validateTerm($name, $start, $end) {
     return null;
 }
 
-// ---------- CREATE ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_term'])) {
     $name = postVal('name');
     $start = postVal('start_date');
@@ -51,7 +50,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_term'])) {
     }
 }
 
-// ---------- UPDATE ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_term'])) {
     $id = postVal('id');
     $name = postVal('name');
@@ -88,7 +86,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_term'])) {
     }
 }
 
-// ---------- DELETE ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_term'])) {
     $id = postVal('id');
     $result = ctype_digit($id) ? deleteTerm($pdo, $id) : "Invalid term.";
@@ -101,7 +98,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_term'])) {
     }
 }
 
-// ---------- READ (search + status filter) ----------
 $edit = null;
 if (isset($_GET['edit']) && ctype_digit($_GET['edit'])) {
     $st = $pdo->prepare("SELECT * FROM terms WHERE id = ?");

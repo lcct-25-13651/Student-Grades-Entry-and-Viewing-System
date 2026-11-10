@@ -6,7 +6,6 @@ requireRole('admin');
 $message = '';
 $message_type = '';
 
-// Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_user'])) {
         $username = postVal('username');
@@ -17,7 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $first_name = postVal('first_name');
         $last_name = postVal('last_name');
         
-        // Check if username already exists
         $check_stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
         $check_stmt->execute([$username]);
         
@@ -49,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $code = postVal('code');
         $description = postVal('description');
         
-        // Check if subject code already exists
         $check_stmt = $pdo->prepare("SELECT id FROM subjects WHERE code = ?");
         $check_stmt->execute([$code]);
         
@@ -75,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = $_POST['email'];
         $role = $_POST['role'];
         
-        // Check if username already exists (excluding current user)
         $check_stmt = $pdo->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
         $check_stmt->execute([$username, $user_id]);
         
@@ -116,7 +112,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $code = $_POST['code'];
         $description = $_POST['description'];
         
-        // Check if subject code already exists (excluding current subject)
         $check_stmt = $pdo->prepare("SELECT id FROM subjects WHERE code = ? AND id != ?");
         $check_stmt->execute([$code, $subject_id]);
         
@@ -132,7 +127,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Handle delete actions
 if (isset($_GET['action']) && isset($_GET['id'])) {
     $action = $_GET['action'];
     $id = $_GET['id'];
@@ -173,13 +167,11 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     }
 }
 
-// Get statistics and data
 $total_students = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'student'")->fetchColumn();
 $total_teachers = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'teacher'")->fetchColumn();
 $total_classrooms = $pdo->query("SELECT COUNT(*) FROM classrooms")->fetchColumn();
 $total_subjects = $pdo->query("SELECT COUNT(*) FROM subjects")->fetchColumn();
 
-// Users: search + role filter (prepared statement)
 $u_q    = getVal('u_q');
 $u_role = getVal('u_role');
 $u_where = [];
@@ -252,7 +244,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
 <body>
     <div class="container-fluid">
         <div class="row">
-            <!-- Sidebar -->
             <div class="col-md-3 col-lg-2 sidebar">
                 <div class="d-flex flex-column p-3">
                     <div class="text-center mb-4">
@@ -301,7 +292,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                 </div>
             </div>
 
-            <!-- Main Content -->
             <div class="col-md-9 col-lg-10 ms-sm-auto px-4 py-4">
                 <?php if ($message): ?>
                     <div class="alert alert-<?php echo e($message_type); ?> alert-dismissible fade show" role="alert">
@@ -311,14 +301,12 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                 <?php endif; ?>
 
                 <div class="tab-content">
-                    <!-- Dashboard Tab -->
                     <div class="tab-pane fade show active" id="dashboard">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2>Admin Dashboard</h2>
                             <span>Welcome, <?php echo e($_SESSION['first_name']); ?>!</span>
                         </div>
 
-                        <!-- Statistics Cards -->
                         <div class="row mb-4">
                             <div class="col-md-3">
                                 <div class="card stat-card bg-primary text-white">
@@ -374,7 +362,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                             </div>
                         </div>
 
-                        <!-- Recent Activity -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="card">
@@ -435,7 +422,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                         </div>
                     </div>
 
-                    <!-- Users Tab -->
                     <div class="tab-pane fade" id="users">
                         <h2 class="mb-4">Manage Users</h2>
                         
@@ -567,7 +553,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                         </div>
                     </div>
 
-                    <!-- Subjects Tab -->
                     <div class="tab-pane fade" id="subjects">
                         <h2 class="mb-4">Manage Subjects</h2>
                         
@@ -639,7 +624,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                         </div>
                     </div>
 
-                    <!-- Classrooms Tab -->
                     <div class="tab-pane fade" id="classrooms">
                         <h2 class="mb-4">Manage Classrooms</h2>
                         
@@ -692,7 +676,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
         </div>
     </div>
 
-    <!-- Edit User Modal -->
     <div class="modal fade" id="editUserModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -743,7 +726,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
         </div>
     </div>
 
-    <!-- Change Password Modal -->
     <div class="modal fade" id="changePasswordModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -787,7 +769,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
         </div>
     </div>
 
-    <!-- Edit Subject Modal -->
     <div class="modal fade" id="editSubjectModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -822,7 +803,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Activate tab from URL hash
         document.addEventListener('DOMContentLoaded', function() {
             var triggerTabList = [].slice.call(document.querySelectorAll('a[data-bs-toggle="tab"]'))
             triggerTabList.forEach(function (triggerEl) {
@@ -833,19 +813,15 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                 })
             });
 
-
-            // Open the tab named in the URL (e.g. admin.php#users)
             if (window.location.hash) {
                 var hashTab = document.querySelector('a[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
                 if (hashTab) bootstrap.Tab.getOrCreateInstance(hashTab).show();
             }
 
-            // Open the Users tab after a search/filter
             <?php if ($u_q !== '' || $u_role !== ''): ?>
             bootstrap.Tab.getOrCreateInstance(document.querySelector('a[href="#users"]')).show();
             <?php endif; ?>
 
-            // Edit User Modal
             var editUserModal = document.getElementById('editUserModal')
             editUserModal.addEventListener('show.bs.modal', function (event) {
                 var button = event.relatedTarget
@@ -865,7 +841,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                 modal.querySelector('#edit_role').value = role
             })
 
-            // Change Password Modal
             var changePasswordModal = document.getElementById('changePasswordModal')
             changePasswordModal.addEventListener('show.bs.modal', function (event) {
                 var button = event.relatedTarget
@@ -877,7 +852,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                 modal.querySelector('#password_username').value = username
             })
 
-            // Edit Subject Modal
             var editSubjectModal = document.getElementById('editSubjectModal')
             editSubjectModal.addEventListener('show.bs.modal', function (event) {
                 var button = event.relatedTarget
@@ -894,7 +868,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
             })
         });
 
-        // Password toggle functionality
         function togglePassword(passwordFieldId, iconId) {
             var passwordField = document.getElementById(passwordFieldId);
             var icon = document.getElementById(iconId);
@@ -910,7 +883,6 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
             }
         }
 
-        // Password strength indicator (optional enhancement)
         function checkPasswordStrength(password) {
             var strength = 0;
             if (password.length >= 6) strength++;

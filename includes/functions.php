@@ -45,7 +45,6 @@ function getGradeColor($grade) {
 }
 
 function deleteUser($pdo, $user_id) {
-    // Don't allow users to delete themselves
     if ($user_id == $_SESSION['user_id']) {
         return "You cannot delete your own account!";
     }
@@ -53,22 +52,18 @@ function deleteUser($pdo, $user_id) {
     try {
         $pdo->beginTransaction();
         
-        // Delete user's attendance and grades first
         $stmt = $pdo->prepare("DELETE FROM attendance WHERE student_id = ? OR teacher_id = ?");
         $stmt->execute([$user_id, $user_id]);
 
         $stmt = $pdo->prepare("DELETE FROM grades WHERE student_id = ? OR teacher_id = ?");
         $stmt->execute([$user_id, $user_id]);
         
-        // Delete from classroom_students
         $stmt = $pdo->prepare("DELETE FROM classroom_students WHERE student_id = ?");
         $stmt->execute([$user_id]);
         
-        // Update classrooms if user is a teacher
         $stmt = $pdo->prepare("UPDATE classrooms SET teacher_id = NULL WHERE teacher_id = ?");
         $stmt->execute([$user_id]);
         
-        // Finally delete the user
         $stmt = $pdo->prepare("DELETE FROM users WHERE id = ?");
         $stmt->execute([$user_id]);
         
@@ -84,11 +79,9 @@ function deleteSubject($pdo, $subject_id) {
     try {
         $pdo->beginTransaction();
         
-        // Delete grades associated with this subject
         $stmt = $pdo->prepare("DELETE FROM grades WHERE subject_id = ?");
         $stmt->execute([$subject_id]);
         
-        // Delete the subject
         $stmt = $pdo->prepare("DELETE FROM subjects WHERE id = ?");
         $stmt->execute([$subject_id]);
         
@@ -104,18 +97,15 @@ function deleteClassroom($pdo, $classroom_id) {
     try {
         $pdo->beginTransaction();
         
-        // Delete attendance and grades associated with this classroom
         $stmt = $pdo->prepare("DELETE FROM attendance WHERE classroom_id = ?");
         $stmt->execute([$classroom_id]);
 
         $stmt = $pdo->prepare("DELETE FROM grades WHERE classroom_id = ?");
         $stmt->execute([$classroom_id]);
         
-        // Delete classroom students
         $stmt = $pdo->prepare("DELETE FROM classroom_students WHERE classroom_id = ?");
         $stmt->execute([$classroom_id]);
         
-        // Delete the classroom
         $stmt = $pdo->prepare("DELETE FROM classrooms WHERE id = ?");
         $stmt->execute([$classroom_id]);
         
@@ -128,7 +118,6 @@ function deleteClassroom($pdo, $classroom_id) {
 }
 
 function deleteGrade($pdo, $grade_id, $teacher_id) {
-    // Verify the grade belongs to the teacher
     $stmt = $pdo->prepare("SELECT * FROM grades WHERE id = ? AND teacher_id = ?");
     $stmt->execute([$grade_id, $teacher_id]);
     
@@ -145,14 +134,12 @@ function removeStudentFromClassroom($pdo, $classroom_id, $student_id) {
     try {
         $pdo->beginTransaction();
         
-        // Delete attendance and grades for this student in this classroom
         $stmt = $pdo->prepare("DELETE FROM attendance WHERE classroom_id = ? AND student_id = ?");
         $stmt->execute([$classroom_id, $student_id]);
 
         $stmt = $pdo->prepare("DELETE FROM grades WHERE classroom_id = ? AND student_id = ?");
         $stmt->execute([$classroom_id, $student_id]);
         
-        // Remove student from classroom
         $stmt = $pdo->prepare("DELETE FROM classroom_students WHERE classroom_id = ? AND student_id = ?");
         $stmt->execute([$classroom_id, $student_id]);
         
@@ -176,24 +163,18 @@ function getClassroomStudents($pdo, $classroom_id) {
     return $stmt->fetchAll();
 }
 
-// ---------- Helpers added for security / validation ----------
-
-// Escape output (XSS protection)
 function e($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
-// Get a trimmed POST value
 function postVal($key) {
     return isset($_POST[$key]) ? trim($_POST[$key]) : '';
 }
 
-// Get a trimmed GET value
 function getVal($key) {
     return isset($_GET[$key]) ? trim($_GET[$key]) : '';
 }
 
-// Check a Y-m-d date string is a real date
 function isValidDate($date) {
     $d = DateTime::createFromFormat('Y-m-d', $date);
     return $d && $d->format('Y-m-d') === $date;

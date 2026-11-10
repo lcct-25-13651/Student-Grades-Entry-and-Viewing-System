@@ -3,13 +3,21 @@
 PHP + MySQL (PDO) record management system with three roles: admin, teacher, student.
 
 ## Setup (XAMPP)
-1. Copy this folder to `C:\xampp\htdocs\student-grades-management-system`.
+1. Copy this folder to `C:\xampp\htdocs\Student-Grades-Entry-and-Viewing-System-main`.
 2. Start Apache and MySQL in XAMPP.
 3. In phpMyAdmin, create a database named `student_grade_management`, then import `student_grade_management.sql` (fresh install, includes all 8 tables).
    - Already have the old database? Run `migration_add_tables.sql` instead (adds the 3 new tables and 2 foreign keys).
-4. Open http://localhost/student-grades-management-system/
+4. Open http://localhost/Student-Grades-Entry-and-Viewing-System-main/
 
-Demo logins (from the sample data): `admin`, `teacher`, `student` (use the passwords you set when you created them).
+Demo logins:
+
+| Role | Username | Password |
+|---|---|---|
+| Admin | `admin` | `admin123` |
+| Teacher | `teacher` | `teacher123` |
+| Student | `student` | `student123` |
+
+If you imported the database before these passwords were set, run the `UPDATE` statements in `reset_demo_passwords.sql` once in phpMyAdmin.
 
 ## Database (8 tables, all InnoDB with PK + FK)
 | Table | Purpose | Foreign keys |

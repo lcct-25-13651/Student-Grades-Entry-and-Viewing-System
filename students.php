@@ -5,7 +5,6 @@ requireRole('student');
 
 $student_id = $_SESSION['user_id'];
 
-// Get student's grades
 $grades_stmt = $pdo->prepare("
     SELECT g.*, s.name as subject_name, c.name as classroom_name, 
            u.first_name as teacher_first, u.last_name as teacher_last 
@@ -19,7 +18,6 @@ $grades_stmt = $pdo->prepare("
 $grades_stmt->execute([$student_id]);
 $grades = $grades_stmt->fetchAll();
 
-// Calculate statistics
 $total_grades = count($grades);
 $average_grade = 0;
 if ($total_grades > 0) {
@@ -30,7 +28,6 @@ if ($total_grades > 0) {
     $average_grade = $sum / $total_grades;
 }
 
-// Get grade distribution
 $grade_distribution = ['A' => 0, 'B' => 0, 'C' => 0, 'D' => 0, 'F' => 0];
 foreach ($grades as $grade) {
     $letter_grade = calculateGradePoint($grade['grade']);
@@ -76,7 +73,6 @@ foreach ($grades as $grade) {
 <body>
     <div class="container-fluid">
         <div class="row">
-            <!-- Sidebar -->
             <div class="col-md-3 col-lg-2 sidebar">
                 <div class="d-flex flex-column p-3">
                     <div class="text-center mb-4">
@@ -110,17 +106,14 @@ foreach ($grades as $grade) {
                 </div>
             </div>
 
-            <!-- Main Content -->
             <div class="col-md-9 col-lg-10 ms-sm-auto px-4 py-4">
                 <div class="tab-content">
-                    <!-- Dashboard Tab -->
                     <div class="tab-pane fade show active" id="dashboard">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2>Student Dashboard</h2>
                             <span>Welcome, <?php echo e($_SESSION['first_name']); ?>!</span>
                         </div>
 
-                        <!-- Statistics -->
                         <div class="row mb-4">
                             <div class="col-md-3">
                                 <div class="card stat-card bg-primary text-white">
@@ -176,7 +169,6 @@ foreach ($grades as $grade) {
                             </div>
                         </div>
 
-                        <!-- Grade Distribution -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="card">
@@ -239,7 +231,6 @@ foreach ($grades as $grade) {
                         </div>
                     </div>
 
-                    <!-- Grades Tab -->
                     <div class="tab-pane fade" id="grades">
                         <h2 class="mb-4">My Grades</h2>
                         
@@ -293,7 +284,6 @@ foreach ($grades as $grade) {
                         </div>
                     </div>
 
-                    <!-- Performance Tab -->
                     <div class="tab-pane fade" id="performance">
                         <h2 class="mb-4">Performance Analysis</h2>
                         
@@ -355,7 +345,6 @@ foreach ($grades as $grade) {
                 })
             });
 
-            // Simple grade chart
             var ctx = document.getElementById('gradeChart').getContext('2d');
             var gradeChart = new Chart(ctx, {
                 type: 'line',

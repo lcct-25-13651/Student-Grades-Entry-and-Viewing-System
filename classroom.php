@@ -1,6 +1,7 @@
 <?php
 include 'includes/conn.php';
 include 'includes/functions.php';
+include 'includes/layout.php';
 
 if (!isLoggedIn() || !hasRole('teacher')) {
     redirect('index.php');
@@ -10,7 +11,6 @@ $teacher_id = $_SESSION['user_id'];
 $message = '';
 $message_type = '';
 
-// Handle classroom creation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_classroom'])) {
     $name = postVal('name');
     $description = postVal('description');
@@ -30,7 +30,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_classroom'])) 
     }
 }
 
-// Handle classroom update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_classroom'])) {
     $classroom_id = postVal('classroom_id');
     $name = postVal('name');
@@ -51,18 +50,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_classroom'])) 
     }
 }
 
-// Handle student addition to classroom
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_student'])) {
     $classroom_id = postVal('classroom_id');
     $student_id = postVal('student_id');
 
-    // Classroom must belong to this teacher and the user must be a student
     $own = $pdo->prepare("SELECT 1 FROM classrooms WHERE id = ? AND teacher_id = ?");
     $own->execute([$classroom_id, $teacher_id]);
     $is_student = $pdo->prepare("SELECT 1 FROM users WHERE id = ? AND role = 'student'");
     $is_student->execute([$student_id]);
 
-    // Check if student is already in classroom
     $check_stmt = $pdo->prepare("SELECT * FROM classroom_students WHERE classroom_id = ? AND student_id = ?");
     $check_stmt->execute([$classroom_id, $student_id]);
 
@@ -80,7 +76,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_student'])) {
     }
 }
 
-// Handle student removal from classroom
 if (isset($_GET['action']) && $_GET['action'] === 'remove_student' && isset($_GET['classroom_id']) && isset($_GET['student_id'])) {
     $classroom_id = $_GET['classroom_id'];
     $student_id = $_GET['student_id'];
@@ -95,11 +90,9 @@ if (isset($_GET['action']) && $_GET['action'] === 'remove_student' && isset($_GE
     }
 }
 
-// Handle classroom deletion
 if (isset($_GET['action']) && $_GET['action'] === 'delete_classroom' && isset($_GET['id'])) {
     $classroom_id = $_GET['id'];
     
-    // Verify the classroom belongs to the teacher
     $check_stmt = $pdo->prepare("SELECT * FROM classrooms WHERE id = ? AND teacher_id = ?");
     $check_stmt->execute([$classroom_id, $teacher_id]);
     
@@ -118,12 +111,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete_classroom' && isset($_
     }
 }
 
-// Get teacher's classrooms
 $classrooms = $pdo->prepare("SELECT c.*, gl.name AS grade_level_name FROM classrooms c LEFT JOIN grade_levels gl ON c.grade_level_id = gl.id WHERE c.teacher_id = ? ORDER BY c.name");
 $classrooms->execute([$teacher_id]);
 $teacher_classrooms = $classrooms->fetchAll();
 
-// Grade levels for the dropdown + classroom being edited (if any)
 $grade_levels = $pdo->query("SELECT * FROM grade_levels ORDER BY name")->fetchAll();
 $edit_classroom = null;
 if (isset($_GET['edit']) && ctype_digit($_GET['edit'])) {
@@ -133,10 +124,8 @@ if (isset($_GET['edit']) && ctype_digit($_GET['edit'])) {
 }
 $cv = $edit_classroom ?: ['id' => '', 'name' => '', 'description' => '', 'grade_level_id' => ''];
 
-// Get all students
 $students = $pdo->query("SELECT * FROM users WHERE role = 'student' ORDER BY first_name, last_name")->fetchAll();
 
-// Get students for a specific classroom if requested
 $classroom_students = [];
 if (isset($_GET['view_students']) && isset($_GET['classroom_id'])) {
     $classroom_id = $_GET['classroom_id'];
@@ -144,42 +133,10 @@ if (isset($_GET['view_students']) && isset($_GET['classroom_id'])) {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Classrooms - Student Grade Management</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success">
-        <div class="container">
-            <a class="navbar-brand" href="teacher.php">
-                <i class="fas fa-chalkboard-teacher"></i> Teacher Portal
-            </a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">
-                    Welcome, <?php echo e($_SESSION['first_name']); ?>
-                </span>
-                <a class="nav-link" href="teacher.php">Dashboard</a>
-                <a class="nav-link" href="attendance.php">Attendance</a>
-                <a class="nav-link" href="logout.php">Logout</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container mt-4">
-        <?php if ($message): ?>
-            <div class="alert alert-<?php echo e($message_type); ?> alert-dismissible fade show" role="alert">
-                <?php echo e($message); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
+<?php layoutStartSidebar('My Classrooms', 'teacher', 'classrooms'); ?>
+<?php flashMessage($message, $message_type); ?>
 
         <?php if (isset($_GET['view_students']) && isset($_GET['classroom_id'])): ?>
-            <!-- View Students in Classroom -->
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4>
@@ -222,7 +179,6 @@ if (isset($_GET['view_students']) && isset($_GET['classroom_id'])) {
                 </div>
             </div>
         <?php else: ?>
-            <!-- Main Classroom Management -->
             <div class="row">
                 <div class="col-md-6">
                     <div class="card">
@@ -296,7 +252,6 @@ if (isset($_GET['view_students']) && isset($_GET['classroom_id'])) {
                 </div>
             </div>
 
-            <!-- Existing Classrooms -->
             <div class="row mt-4">
                 <div class="col-12">
                     <div class="card">
@@ -317,7 +272,6 @@ if (isset($_GET['view_students']) && isset($_GET['classroom_id'])) {
                                     </thead>
                                     <tbody>
                                         <?php foreach($teacher_classrooms as $classroom): 
-                                            // Count students in this classroom
                                             $student_count = $pdo->prepare("SELECT COUNT(*) FROM classroom_students WHERE classroom_id = ?");
                                             $student_count->execute([$classroom['id']]);
                                             $count = $student_count->fetchColumn();
@@ -349,8 +303,4 @@ if (isset($_GET['view_students']) && isset($_GET['classroom_id'])) {
                 </div>
             </div>
         <?php endif; ?>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<?php layoutEnd(); ?>

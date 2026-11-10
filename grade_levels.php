@@ -7,7 +7,6 @@ requireRole('admin');
 $message = '';
 $message_type = '';
 
-// ---------- CREATE ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_grade_level'])) {
     $name = postVal('name');
     $description = postVal('description');
@@ -30,7 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_grade_level'])) {
     }
 }
 
-// ---------- UPDATE ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_grade_level'])) {
     $id = postVal('id');
     $name = postVal('name');
@@ -54,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_grade_level'])
     }
 }
 
-// ---------- DELETE (POST + confirm prompt in the form) ----------
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_grade_level'])) {
     $id = postVal('id');
     $result = ctype_digit($id) ? deleteGradeLevel($pdo, $id) : "Invalid grade level.";
@@ -67,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_grade_level'])
     }
 }
 
-// ---------- READ (search) ----------
 $edit = null;
 if (isset($_GET['edit']) && ctype_digit($_GET['edit'])) {
     $st = $pdo->prepare("SELECT * FROM grade_levels WHERE id = ?");

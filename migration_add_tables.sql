@@ -1,10 +1,4 @@
--- Run this ONLY on your existing student_grade_management database (adds 3 tables + 2 foreign keys)
 USE `student_grade_management`;
-
--- --------------------------------------------------------
--- ADDED TABLES (6-8): grade_levels, terms, attendance
--- plus new foreign keys: classrooms.grade_level_id, grades.term_id
--- --------------------------------------------------------
 
 CREATE TABLE `grade_levels` (
   `id` int(11) NOT NULL AUTO_INCREMENT,

@@ -1,5 +1,4 @@
 <?php
-// Shared page layout for the newer pages (grade_levels, terms, attendance)
 
 function layoutStart($title, $navClass, $links) {
     ?>
@@ -31,7 +30,6 @@ function layoutStart($title, $navClass, $links) {
     <?php
 }
 
-// Sidebar layout (same look as the admin / teacher dashboards)
 function layoutStartSidebar($title, $role, $active) {
     $GLOBALS['layout_sidebar'] = true;
     if ($role === 'admin') {

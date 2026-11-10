@@ -5,12 +5,10 @@ requireRole('teacher');
 
 $teacher_id = $_SESSION['user_id'];
 
-// Get teacher's classrooms
 $classrooms = $pdo->prepare("SELECT * FROM classrooms WHERE teacher_id = ?");
 $classrooms->execute([$teacher_id]);
 $teacher_classrooms = $classrooms->fetchAll();
 
-// Get students in teacher's classrooms
 $students_stmt = $pdo->prepare("
     SELECT u.id, u.first_name, u.last_name, u.username, c.name as classroom_name 
     FROM users u 
@@ -58,7 +56,6 @@ $students = $students_stmt->fetchAll();
 <body>
     <div class="container-fluid">
         <div class="row">
-            <!-- Sidebar -->
             <div class="col-md-3 col-lg-2 sidebar">
                 <div class="d-flex flex-column p-3">
                     <div class="text-center mb-4">
@@ -102,17 +99,14 @@ $students = $students_stmt->fetchAll();
                 </div>
             </div>
 
-            <!-- Main Content -->
             <div class="col-md-9 col-lg-10 ms-sm-auto px-4 py-4">
                 <div class="tab-content">
-                    <!-- Dashboard Tab -->
                     <div class="tab-pane fade show active" id="dashboard">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2>Teacher Dashboard</h2>
                             <span>Welcome, <?php echo e($_SESSION['first_name']); ?>!</span>
                         </div>
 
-                        <!-- Statistics -->
                         <div class="row mb-4">
                             <div class="col-md-4">
                                 <div class="card grade-card bg-primary text-white">
@@ -155,7 +149,6 @@ $students = $students_stmt->fetchAll();
                             </div>
                         </div>
 
-                        <!-- My Classrooms -->
                         <div class="row">
                             <div class="col-12">
                                 <div class="card">
@@ -182,7 +175,6 @@ $students = $students_stmt->fetchAll();
                         </div>
                     </div>
 
-                    <!-- Students Tab -->
                     <div class="tab-pane fade" id="students">
                         <h2 class="mb-4">My Students</h2>
                         
@@ -238,7 +230,6 @@ $students = $students_stmt->fetchAll();
                 })
             })
 
-            // Open the tab named in the URL (e.g. admin.php#users)
             if (window.location.hash) {
                 var hashTab = document.querySelector('a[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
                 if (hashTab) bootstrap.Tab.getOrCreateInstance(hashTab).show();

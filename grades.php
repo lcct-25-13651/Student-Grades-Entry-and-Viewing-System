@@ -1,6 +1,7 @@
 <?php
 include 'includes/conn.php';
 include 'includes/functions.php';
+include 'includes/layout.php';
 
 if (!isLoggedIn() || !hasRole('teacher')) {
     redirect('index.php');
@@ -10,7 +11,6 @@ $teacher_id = $_SESSION['user_id'];
 $message = '';
 $message_type = '';
 
-// ---------- Validation + save (create / update) ----------
 function validateGradeInput($pdo, $teacher_id, $in) {
     $errors = [];
     if (!ctype_digit($in['student_id']) || !ctype_digit($in['subject_id']) || !ctype_digit($in['classroom_id'])) {
@@ -30,7 +30,6 @@ function validateGradeInput($pdo, $teacher_id, $in) {
     }
     if ($errors) return $errors;
 
-    // The classroom must belong to this teacher, and the student must be enrolled in it
     $chk = $pdo->prepare("SELECT 1 FROM classrooms WHERE id = ? AND teacher_id = ?");
     $chk->execute([$in['classroom_id'], $teacher_id]);
     if (!$chk->fetch()) $errors[] = "You can only grade students in your own classrooms.";
@@ -63,7 +62,6 @@ function gradeInputFromPost() {
     ];
 }
 
-// CREATE
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_grade'])) {
     $in = gradeInputFromPost();
     $errors = validateGradeInput($pdo, $teacher_id, $in);
@@ -78,7 +76,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_grade'])) {
     }
 }
 
-// UPDATE
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_grade'])) {
     $grade_id = postVal('grade_id');
     $in = gradeInputFromPost();
@@ -94,7 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_grade'])) {
     }
 }
 
-// DELETE
 if (isset($_GET['action']) && $_GET['action'] === 'delete_grade' && isset($_GET['id'])) {
     $grade_id = $_GET['id'];
     
@@ -108,7 +104,6 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete_grade' && isset($_GET[
     }
 }
 
-// Load the grade being edited (if any)
 $edit_grade = null;
 if (isset($_GET['edit']) && ctype_digit($_GET['edit'])) {
     $st = $pdo->prepare("SELECT * FROM grades WHERE id = ? AND teacher_id = ?");
@@ -116,16 +111,13 @@ if (isset($_GET['edit']) && ctype_digit($_GET['edit'])) {
     $edit_grade = $st->fetch() ?: null;
 }
 
-// Get teacher's classrooms and students
 $classrooms = $pdo->prepare("SELECT * FROM classrooms WHERE teacher_id = ?");
 $classrooms->execute([$teacher_id]);
 $teacher_classrooms = $classrooms->fetchAll();
 
-// Get subjects and terms
 $subjects = $pdo->query("SELECT * FROM subjects ORDER BY name")->fetchAll();
 $terms = $pdo->query("SELECT * FROM terms ORDER BY start_date")->fetchAll();
 
-// Get students in teacher's classrooms
 $students_stmt = $pdo->prepare("
     SELECT DISTINCT u.id, u.first_name, u.last_name 
     FROM users u 
@@ -137,7 +129,6 @@ $students_stmt = $pdo->prepare("
 $students_stmt->execute([$teacher_id]);
 $students = $students_stmt->fetchAll();
 
-// Get grades for viewing (with search / filters)
 $f_q       = getVal('q');
 $f_subject = getVal('f_subject');
 $f_term    = getVal('f_term');
@@ -167,10 +158,8 @@ $grades_stmt = $pdo->prepare("
 $grades_stmt->execute($params);
 $grades = $grades_stmt->fetchAll();
 
-// Form defaults (edit mode or blank)
 $v = $edit_grade ?: ['id' => '', 'student_id' => '', 'subject_id' => '', 'classroom_id' => '', 'term_id' => '', 'grade' => '', 'grade_type' => '', 'remarks' => ''];
 
-// Calculate statistics
 $total_grades = count($grades);
 $average_grade = 0;
 if ($total_grades > 0) {
@@ -182,45 +171,11 @@ if ($total_grades > 0) {
 }
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Grades - Student Grade Management</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        .grade-badge {
-            font-size: 0.9em;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-info">
-        <div class="container">
-            <a class="navbar-brand" href="teacher.php">
-                <i class="fas fa-edit"></i> Grade Management
-            </a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">
-                    Welcome, <?php echo e($_SESSION['first_name']); ?>
-                </span>
-                <a class="nav-link" href="teacher.php">Dashboard</a>
-                <a class="nav-link" href="attendance.php">Attendance</a>
-                <a class="nav-link" href="logout.php">Logout</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container mt-4">
-        <?php if ($message): ?>
-            <div class="alert alert-<?php echo e($message_type); ?> alert-dismissible fade show" role="alert">
-                <?php echo e($message); ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        <?php endif; ?>
+<?php layoutStartSidebar('Manage Grades', 'teacher', 'grades'); ?>
+<style>
+    .grade-badge { font-size: 0.9em; font-weight: bold; }
+</style>
+<?php flashMessage($message, $message_type); ?>
 
         <div class="row">
             <div class="col-md-6">
@@ -356,7 +311,6 @@ if ($total_grades > 0) {
             </div>
         </div>
 
-        <!-- Grades Table -->
         <div class="row mt-4">
             <div class="col-12">
                 <div class="card">
@@ -449,8 +403,4 @@ if ($total_grades > 0) {
                 </div>
             </div>
         </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<?php layoutEnd(); ?>
