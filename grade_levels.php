@@ -52,8 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_grade_level'])
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_grade_level'])) {
-    $id = postVal('id');
+if (isset($_GET['action']) && $_GET['action'] === 'delete_grade_level' && isset($_GET['id'])) {
+    $id = getVal('id');
     $result = ctype_digit($id) ? deleteGradeLevel($pdo, $id) : "Invalid grade level.";
     if ($result === true) {
         $message = "Grade level deleted successfully!";
@@ -134,10 +134,7 @@ flashMessage($message, $message_type);
                                 <td><span class="badge bg-info"><?php echo e($gl['classroom_count']); ?></span></td>
                                 <td class="text-nowrap">
                                     <a href="?edit=<?php echo e($gl['id']); ?>" class="btn btn-sm btn-outline-primary">Edit</a>
-                                    <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this grade level?')">
-                                        <input type="hidden" name="id" value="<?php echo e($gl['id']); ?>">
-                                        <button type="submit" name="delete_grade_level" class="btn btn-sm btn-outline-danger">Delete</button>
-                                    </form>
+                                    <a href="?action=delete_grade_level&id=<?php echo e($gl['id']); ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this grade level?')">Delete</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

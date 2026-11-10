@@ -86,8 +86,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_term'])) {
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_term'])) {
-    $id = postVal('id');
+if (isset($_GET['action']) && $_GET['action'] === 'delete_term' && isset($_GET['id'])) {
+    $id = getVal('id');
     $result = ctype_digit($id) ? deleteTerm($pdo, $id) : "Invalid term.";
     if ($result === true) {
         $message = "Term deleted successfully!";
@@ -189,10 +189,7 @@ flashMessage($message, $message_type);
                                 <td><span class="badge bg-info"><?php echo e($t['grade_count']); ?></span></td>
                                 <td class="text-nowrap">
                                     <a href="?edit=<?php echo e($t['id']); ?>" class="btn btn-sm btn-outline-primary">Edit</a>
-                                    <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this term?')">
-                                        <input type="hidden" name="id" value="<?php echo e($t['id']); ?>">
-                                        <button type="submit" name="delete_term" class="btn btn-sm btn-outline-danger">Delete</button>
-                                    </form>
+                                    <a href="?action=delete_term&id=<?php echo e($t['id']); ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this term?')">Delete</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

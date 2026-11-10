@@ -107,8 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_attendance']))
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_attendance'])) {
-    $id = postVal('id');
+if (isset($_GET['action']) && $_GET['action'] === 'delete_attendance' && isset($_GET['id'])) {
+    $id = getVal('id');
     if (ctype_digit($id)) {
         $stmt = $pdo->prepare("DELETE FROM attendance WHERE id = ? AND teacher_id = ?");
         $stmt->execute([$id, $teacher_id]);
@@ -269,10 +269,7 @@ flashMessage($message, $message_type);
                                 <td><?php echo e($r['remarks']); ?></td>
                                 <td class="text-nowrap">
                                     <a href="?edit=<?php echo e($r['id']); ?>" class="btn btn-sm btn-outline-primary">Edit</a>
-                                    <form method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this attendance record?')">
-                                        <input type="hidden" name="id" value="<?php echo e($r['id']); ?>">
-                                        <button type="submit" name="delete_attendance" class="btn btn-sm btn-outline-danger">Delete</button>
-                                    </form>
+                                    <a href="?action=delete_attendance&id=<?php echo e($r['id']); ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this attendance record?')">Delete</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
