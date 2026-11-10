@@ -94,7 +94,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label class="form-label">Password</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                        <input type="password" class="form-control" name="password" required>
+                        <input type="password" class="form-control" name="password" id="password" required>
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword" aria-label="Show password">
+                            <i class="fas fa-eye" id="togglePasswordIcon"></i>
+                        </button>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">
@@ -106,5 +109,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function () {
+            var field = document.getElementById('password');
+            var icon = document.getElementById('togglePasswordIcon');
+            var show = field.type === 'password';
+            field.type = show ? 'text' : 'password';
+            icon.className = show ? 'fas fa-eye-slash' : 'fas fa-eye';
+            this.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        });
+    </script>
 </body>
 </html>
