@@ -82,7 +82,7 @@ foreach ($grades as $grade) {
                     <div class="text-center mb-4">
                         <i class="fas fa-user-graduate fa-2x mb-2"></i>
                         <h5>Student Portal</h5>
-                        <small><?php echo $_SESSION['first_name'] . ' ' . $_SESSION['last_name']; ?></small>
+                        <small><?php echo e($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></small>
                     </div>
                     
                     <ul class="nav nav-pills flex-column">
@@ -117,7 +117,7 @@ foreach ($grades as $grade) {
                     <div class="tab-pane fade show active" id="dashboard">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2>Student Dashboard</h2>
-                            <span>Welcome, <?php echo $_SESSION['first_name']; ?>!</span>
+                            <span>Welcome, <?php echo e($_SESSION['first_name']); ?>!</span>
                         </div>
 
                         <!-- Statistics -->
@@ -127,7 +127,7 @@ foreach ($grades as $grade) {
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h4><?php echo $total_grades; ?></h4>
+                                                <h4><?php echo e($total_grades); ?></h4>
                                                 <p>Total Grades</p>
                                             </div>
                                             <i class="fas fa-list-alt fa-2x"></i>
@@ -140,7 +140,7 @@ foreach ($grades as $grade) {
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h4><?php echo number_format($average_grade, 2); ?></h4>
+                                                <h4><?php echo e(number_format($average_grade, 2)); ?></h4>
                                                 <p>Average Grade</p>
                                             </div>
                                             <i class="fas fa-calculator fa-2x"></i>
@@ -153,7 +153,7 @@ foreach ($grades as $grade) {
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h4><?php echo calculateGradePoint($average_grade); ?></h4>
+                                                <h4><?php echo e(calculateGradePoint($average_grade)); ?></h4>
                                                 <p>Overall Grade</p>
                                             </div>
                                             <i class="fas fa-award fa-2x"></i>
@@ -166,7 +166,7 @@ foreach ($grades as $grade) {
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h4><?php echo $grade_distribution['A']; ?></h4>
+                                                <h4><?php echo e($grade_distribution['A']); ?></h4>
                                                 <p>A Grades</p>
                                             </div>
                                             <i class="fas fa-star fa-2x"></i>
@@ -197,12 +197,12 @@ foreach ($grades as $grade) {
                                         ?>
                                         <div class="mb-3">
                                             <div class="d-flex justify-content-between mb-1">
-                                                <span>Grade <?php echo $letter; ?></span>
-                                                <span><?php echo $count; ?> (<?php echo number_format($percentage, 1); ?>%)</span>
+                                                <span>Grade <?php echo e($letter); ?></span>
+                                                <span><?php echo e($count); ?> (<?php echo e(number_format($percentage, 1)); ?>%)</span>
                                             </div>
                                             <div class="progress grade-progress">
-                                                <div class="progress-bar <?php echo $color_class; ?>" 
-                                                     style="width: <?php echo $percentage; ?>%"></div>
+                                                <div class="progress-bar <?php echo e($color_class); ?>" 
+                                                     style="width: <?php echo e($percentage); ?>%"></div>
                                             </div>
                                         </div>
                                         <?php endforeach; ?>
@@ -220,15 +220,15 @@ foreach ($grades as $grade) {
                                         ?>
                                         <div class="d-flex justify-content-between align-items-center mb-3 p-2 border rounded">
                                             <div>
-                                                <h6 class="mb-0"><?php echo $grade['subject_name']; ?></h6>
-                                                <small class="text-muted"><?php echo $grade['classroom_name']; ?></small>
+                                                <h6 class="mb-0"><?php echo e($grade['subject_name']); ?></h6>
+                                                <small class="text-muted"><?php echo e($grade['classroom_name']); ?></small>
                                             </div>
                                             <div class="text-end">
-                                                <span class="badge bg-<?php echo $grade_color; ?>">
-                                                    <?php echo $grade['grade']; ?>
+                                                <span class="badge bg-<?php echo e($grade_color); ?>">
+                                                    <?php echo e($grade['grade']); ?>
                                                 </span>
                                                 <div>
-                                                    <small class="text-muted"><?php echo date('M j', strtotime($grade['graded_at'])); ?></small>
+                                                    <small class="text-muted"><?php echo e(date('M j', strtotime($grade['graded_at']))); ?></small>
                                                 </div>
                                             </div>
                                         </div>
@@ -268,22 +268,22 @@ foreach ($grades as $grade) {
                                                 $grade_color = getGradeColor($grade['grade']);
                                             ?>
                                             <tr>
-                                                <td><?php echo $grade['subject_name']; ?></td>
-                                                <td><?php echo $grade['classroom_name']; ?></td>
+                                                <td><?php echo e($grade['subject_name']); ?></td>
+                                                <td><?php echo e($grade['classroom_name']); ?></td>
                                                 <td>
-                                                    <span class="badge bg-<?php echo $grade_color; ?>">
-                                                        <?php echo $grade['grade']; ?>
+                                                    <span class="badge bg-<?php echo e($grade_color); ?>">
+                                                        <?php echo e($grade['grade']); ?>
                                                     </span>
                                                 </td>
-                                                <td><strong><?php echo $letter_grade; ?></strong></td>
+                                                <td><strong><?php echo e($letter_grade); ?></strong></td>
                                                 <td>
                                                     <span class="badge bg-secondary">
-                                                        <?php echo ucfirst($grade['grade_type']); ?>
+                                                        <?php echo e(ucfirst($grade['grade_type'])); ?>
                                                     </span>
                                                 </td>
-                                                <td><?php echo $grade['teacher_first'] . ' ' . $grade['teacher_last']; ?></td>
-                                                <td><?php echo $grade['remarks']; ?></td>
-                                                <td><?php echo date('M j, Y', strtotime($grade['graded_at'])); ?></td>
+                                                <td><?php echo e($grade['teacher_first'] . ' ' . $grade['teacher_last']); ?></td>
+                                                <td><?php echo e($grade['remarks']); ?></td>
+                                                <td><?php echo e(date('M j, Y', strtotime($grade['graded_at']))); ?></td>
                                             </tr>
                                             <?php endforeach; ?>
                                         </tbody>
@@ -317,18 +317,18 @@ foreach ($grades as $grade) {
                                         <div class="text-center">
                                             <h1 class="display-4 text-<?php 
                                                 echo getGradeColor($average_grade); 
-                                            ?>"><?php echo number_format($average_grade, 1); ?></h1>
+                                            ?>"><?php echo e(number_format($average_grade, 1)); ?></h1>
                                             <p class="lead">Overall Average</p>
-                                            <h3><?php echo calculateGradePoint($average_grade); ?></h3>
+                                            <h3><?php echo e(calculateGradePoint($average_grade)); ?></h3>
                                         </div>
                                         <hr>
                                         <div class="row text-center">
                                             <div class="col-6">
-                                                <h5><?php echo $total_grades; ?></h5>
+                                                <h5><?php echo e($total_grades); ?></h5>
                                                 <small>Total Records</small>
                                             </div>
                                             <div class="col-6">
-                                                <h5><?php echo count(array_unique(array_column($grades, 'subject_id'))); ?></h5>
+                                                <h5><?php echo e(count(array_unique(array_column($grades, 'subject_id')))); ?></h5>
                                                 <small>Subjects</small>
                                             </div>
                                         </div>

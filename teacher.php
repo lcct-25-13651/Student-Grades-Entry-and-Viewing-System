@@ -64,7 +64,7 @@ $students = $students_stmt->fetchAll();
                     <div class="text-center mb-4">
                         <i class="fas fa-chalkboard-teacher fa-2x mb-2"></i>
                         <h5>Teacher Portal</h5>
-                        <small><?php echo $_SESSION['first_name'] . ' ' . $_SESSION['last_name']; ?></small>
+                        <small><?php echo e($_SESSION['first_name'] . ' ' . $_SESSION['last_name']); ?></small>
                     </div>
                     
                     <ul class="nav nav-pills flex-column">
@@ -81,6 +81,11 @@ $students = $students_stmt->fetchAll();
                         <li class="nav-item">
                             <a class="nav-link" href="grades.php">
                                 <i class="fas fa-edit me-2"></i>Manage Grades
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="attendance.php">
+                                <i class="fas fa-clipboard-check me-2"></i>Attendance
                             </a>
                         </li>
                         <li class="nav-item">
@@ -104,7 +109,7 @@ $students = $students_stmt->fetchAll();
                     <div class="tab-pane fade show active" id="dashboard">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2>Teacher Dashboard</h2>
-                            <span>Welcome, <?php echo $_SESSION['first_name']; ?>!</span>
+                            <span>Welcome, <?php echo e($_SESSION['first_name']); ?>!</span>
                         </div>
 
                         <!-- Statistics -->
@@ -114,7 +119,7 @@ $students = $students_stmt->fetchAll();
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h4><?php echo count($teacher_classrooms); ?></h4>
+                                                <h4><?php echo e(count($teacher_classrooms)); ?></h4>
                                                 <p>My Classrooms</p>
                                             </div>
                                             <i class="fas fa-chalkboard fa-2x"></i>
@@ -127,7 +132,7 @@ $students = $students_stmt->fetchAll();
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h4><?php echo count($students); ?></h4>
+                                                <h4><?php echo e(count($students)); ?></h4>
                                                 <p>Total Students</p>
                                             </div>
                                             <i class="fas fa-user-graduate fa-2x"></i>
@@ -163,9 +168,9 @@ $students = $students_stmt->fetchAll();
                                             <div class="col-md-4 mb-3">
                                                 <div class="card grade-card border-primary">
                                                     <div class="card-body">
-                                                        <h5 class="card-title"><?php echo $classroom['name']; ?></h5>
-                                                        <p class="card-text"><?php echo $classroom['description']; ?></p>
-                                                        <a href="classroom.php?id=<?php echo $classroom['id']; ?>" class="btn btn-primary btn-sm">Manage</a>
+                                                        <h5 class="card-title"><?php echo e($classroom['name']); ?></h5>
+                                                        <p class="card-text"><?php echo e($classroom['description']); ?></p>
+                                                        <a href="classroom.php?id=<?php echo e($classroom['id']); ?>" class="btn btn-primary btn-sm">Manage</a>
                                                     </div>
                                                 </div>
                                             </div>
@@ -200,13 +205,13 @@ $students = $students_stmt->fetchAll();
                                         <tbody>
                                             <?php foreach($students as $student): ?>
                                             <tr>
-                                                <td><?php echo $student['id']; ?></td>
-                                                <td><?php echo $student['first_name'] . ' ' . $student['last_name']; ?></td>
-                                                <td><?php echo $student['username']; ?></td>
-                                                <td><?php echo $student['classroom_name']; ?></td>
+                                                <td><?php echo e($student['id']); ?></td>
+                                                <td><?php echo e($student['first_name'] . ' ' . $student['last_name']); ?></td>
+                                                <td><?php echo e($student['username']); ?></td>
+                                                <td><?php echo e($student['classroom_name']); ?></td>
                                                 <td>
-                                                    <a href="grades.php?student_id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-primary">View Grades</a>
-                                                    <a href="grades.php?action=add&student_id=<?php echo $student['id']; ?>" class="btn btn-sm btn-outline-success">Add Grade</a>
+                                                    <a href="grades.php?student_id=<?php echo e($student['id']); ?>" class="btn btn-sm btn-outline-primary">View Grades</a>
+                                                    <a href="grades.php?action=add&student_id=<?php echo e($student['id']); ?>" class="btn btn-sm btn-outline-success">Add Grade</a>
                                                 </td>
                                             </tr>
                                             <?php endforeach; ?>
@@ -232,6 +237,12 @@ $students = $students_stmt->fetchAll();
                     tabTrigger.show()
                 })
             })
+
+            // Open the tab named in the URL (e.g. admin.php#users)
+            if (window.location.hash) {
+                var hashTab = document.querySelector('a[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
+                if (hashTab) bootstrap.Tab.getOrCreateInstance(hashTab).show();
+            }
         });
     </script>
 </body>

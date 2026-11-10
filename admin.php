@@ -9,18 +9,31 @@ $message_type = '';
 // Handle form submissions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['add_user'])) {
-        $username = $_POST['username'];
-        $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-        $email = $_POST['email'];
-        $role = $_POST['role'];
-        $first_name = $_POST['first_name'];
-        $last_name = $_POST['last_name'];
+        $username = postVal('username');
+        $raw_password = $_POST['password'] ?? '';
+        $password = password_hash($raw_password, PASSWORD_DEFAULT);
+        $email = postVal('email');
+        $role = postVal('role');
+        $first_name = postVal('first_name');
+        $last_name = postVal('last_name');
         
         // Check if username already exists
         $check_stmt = $pdo->prepare("SELECT id FROM users WHERE username = ?");
         $check_stmt->execute([$username]);
         
-        if ($check_stmt->rowCount() > 0) {
+        if ($username === '' || $first_name === '' || $last_name === '') {
+            $message = "Username, first name and last name are required!";
+            $message_type = "danger";
+        } elseif (strlen($raw_password) < 6) {
+            $message = "Password must be at least 6 characters long!";
+            $message_type = "danger";
+        } elseif ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $message = "Please enter a valid email address!";
+            $message_type = "danger";
+        } elseif (!in_array($role, ['admin', 'teacher', 'student'], true)) {
+            $message = "Invalid role selected!";
+            $message_type = "danger";
+        } elseif ($check_stmt->rowCount() > 0) {
             $message = "Username already exists!";
             $message_type = "danger";
         } else {
@@ -32,15 +45,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if (isset($_POST['add_subject'])) {
-        $name = $_POST['name'];
-        $code = $_POST['code'];
-        $description = $_POST['description'];
+        $name = postVal('name');
+        $code = postVal('code');
+        $description = postVal('description');
         
         // Check if subject code already exists
         $check_stmt = $pdo->prepare("SELECT id FROM subjects WHERE code = ?");
         $check_stmt->execute([$code]);
         
-        if ($check_stmt->rowCount() > 0) {
+        if ($name === '' || $code === '') {
+            $message = "Subject name and code are required!";
+            $message_type = "danger";
+        } elseif ($check_stmt->rowCount() > 0) {
             $message = "Subject code already exists!";
             $message_type = "danger";
         } else {
@@ -163,7 +179,23 @@ $total_teachers = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'teacher'
 $total_classrooms = $pdo->query("SELECT COUNT(*) FROM classrooms")->fetchColumn();
 $total_subjects = $pdo->query("SELECT COUNT(*) FROM subjects")->fetchColumn();
 
-$users = $pdo->query("SELECT * FROM users ORDER BY role, first_name")->fetchAll();
+// Users: search + role filter (prepared statement)
+$u_q    = getVal('u_q');
+$u_role = getVal('u_role');
+$u_where = [];
+$u_params = [];
+if ($u_q !== '') {
+    $u_where[] = "(username LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR email LIKE ?)";
+    $like = '%' . $u_q . '%';
+    array_push($u_params, $like, $like, $like, $like);
+}
+if (in_array($u_role, ['admin', 'teacher', 'student'], true)) {
+    $u_where[] = "role = ?";
+    $u_params[] = $u_role;
+}
+$u_stmt = $pdo->prepare("SELECT * FROM users" . ($u_where ? " WHERE " . implode(' AND ', $u_where) : "") . " ORDER BY role, first_name");
+$u_stmt->execute($u_params);
+$users = $u_stmt->fetchAll();
 $subjects = $pdo->query("SELECT * FROM subjects ORDER BY name")->fetchAll();
 $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name 
                           FROM classrooms c 
@@ -251,6 +283,16 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="grade_levels.php">
+                                <i class="fas fa-layer-group me-2"></i>Grade Levels
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="terms.php">
+                                <i class="fas fa-calendar-alt me-2"></i>Terms
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="logout.php">
                                 <i class="fas fa-sign-out-alt me-2"></i>Logout
                             </a>
@@ -262,8 +304,8 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10 ms-sm-auto px-4 py-4">
                 <?php if ($message): ?>
-                    <div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show" role="alert">
-                        <?php echo $message; ?>
+                    <div class="alert alert-<?php echo e($message_type); ?> alert-dismissible fade show" role="alert">
+                        <?php echo e($message); ?>
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 <?php endif; ?>
@@ -273,7 +315,7 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                     <div class="tab-pane fade show active" id="dashboard">
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h2>Admin Dashboard</h2>
-                            <span>Welcome, <?php echo $_SESSION['first_name']; ?>!</span>
+                            <span>Welcome, <?php echo e($_SESSION['first_name']); ?>!</span>
                         </div>
 
                         <!-- Statistics Cards -->
@@ -283,7 +325,7 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h4><?php echo $total_students; ?></h4>
+                                                <h4><?php echo e($total_students); ?></h4>
                                                 <p>Total Students</p>
                                             </div>
                                             <i class="fas fa-user-graduate fa-2x"></i>
@@ -296,7 +338,7 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h4><?php echo $total_teachers; ?></h4>
+                                                <h4><?php echo e($total_teachers); ?></h4>
                                                 <p>Total Teachers</p>
                                             </div>
                                             <i class="fas fa-chalkboard-teacher fa-2x"></i>
@@ -309,7 +351,7 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h4><?php echo $total_classrooms; ?></h4>
+                                                <h4><?php echo e($total_classrooms); ?></h4>
                                                 <p>Classrooms</p>
                                             </div>
                                             <i class="fas fa-chalkboard fa-2x"></i>
@@ -322,7 +364,7 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                     <div class="card-body">
                                         <div class="d-flex justify-content-between">
                                             <div>
-                                                <h4><?php echo $total_subjects; ?></h4>
+                                                <h4><?php echo e($total_subjects); ?></h4>
                                                 <p>Subjects</p>
                                             </div>
                                             <i class="fas fa-book fa-2x"></i>
@@ -352,9 +394,9 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                                 <tbody>
                                                     <?php foreach(array_slice($users, 0, 5) as $user): ?>
                                                     <tr>
-                                                        <td><?php echo $user['first_name'] . ' ' . $user['last_name']; ?></td>
-                                                        <td><span class="badge bg-secondary"><?php echo $user['role']; ?></span></td>
-                                                        <td><?php echo $user['username']; ?></td>
+                                                        <td><?php echo e($user['first_name'] . ' ' . $user['last_name']); ?></td>
+                                                        <td><span class="badge bg-secondary"><?php echo e($user['role']); ?></span></td>
+                                                        <td><?php echo e($user['username']); ?></td>
                                                     </tr>
                                                     <?php endforeach; ?>
                                                 </tbody>
@@ -380,8 +422,8 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                                 <tbody>
                                                     <?php foreach(array_slice($classrooms, 0, 5) as $classroom): ?>
                                                     <tr>
-                                                        <td><?php echo $classroom['name']; ?></td>
-                                                        <td><?php echo $classroom['first_name'] . ' ' . $classroom['last_name']; ?></td>
+                                                        <td><?php echo e($classroom['name']); ?></td>
+                                                        <td><?php echo e($classroom['first_name'] . ' ' . $classroom['last_name']); ?></td>
                                                     </tr>
                                                     <?php endforeach; ?>
                                                 </tbody>
@@ -450,6 +492,23 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
+                                    <form method="GET" class="row g-2 mb-3">
+                                        <div class="col-md-5">
+                                            <input type="text" class="form-control" name="u_q" placeholder="Search name, username or email..." value="<?php echo e($u_q); ?>">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <select class="form-select" name="u_role">
+                                                <option value="">All roles</option>
+                                                <?php foreach(['admin','teacher','student'] as $r): ?>
+                                                <option value="<?php echo e($r); ?>" <?php echo ($u_role === $r) ? 'selected' : ''; ?>><?php echo e(ucfirst($r)); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                                            <a href="admin.php" class="btn btn-outline-secondary">Reset</a>
+                                        </div>
+                                    </form>
                                     <table class="table table-striped">
                                         <thead>
                                             <tr>
@@ -464,10 +523,10 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                         <tbody>
                                             <?php foreach($users as $user): ?>
                                             <tr>
-                                                <td><?php echo $user['id']; ?></td>
-                                                <td><?php echo $user['first_name'] . ' ' . $user['last_name']; ?></td>
-                                                <td><?php echo $user['username']; ?></td>
-                                                <td><?php echo $user['email']; ?></td>
+                                                <td><?php echo e($user['id']); ?></td>
+                                                <td><?php echo e($user['first_name'] . ' ' . $user['last_name']); ?></td>
+                                                <td><?php echo e($user['username']); ?></td>
+                                                <td><?php echo e($user['email']); ?></td>
                                                 <td>
                                                     <span class="badge bg-<?php 
                                                         switch($user['role']) {
@@ -476,24 +535,24 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                                             case 'student': echo 'primary'; break;
                                                             default: echo 'secondary';
                                                         }
-                                                    ?>"><?php echo $user['role']; ?></span>
+                                                    ?>"><?php echo e($user['role']); ?></span>
                                                 </td>
                                                 <td>
                                                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editUserModal" 
-                                                            data-id="<?php echo $user['id']; ?>"
-                                                            data-username="<?php echo $user['username']; ?>"
-                                                            data-firstname="<?php echo $user['first_name']; ?>"
-                                                            data-lastname="<?php echo $user['last_name']; ?>"
-                                                            data-email="<?php echo $user['email']; ?>"
-                                                            data-role="<?php echo $user['role']; ?>">
+                                                            data-id="<?php echo e($user['id']); ?>"
+                                                            data-username="<?php echo e($user['username']); ?>"
+                                                            data-firstname="<?php echo e($user['first_name']); ?>"
+                                                            data-lastname="<?php echo e($user['last_name']); ?>"
+                                                            data-email="<?php echo e($user['email']); ?>"
+                                                            data-role="<?php echo e($user['role']); ?>">
                                                         <i class="fas fa-edit"></i> Edit
                                                     </button>
                                                     <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#changePasswordModal"
-                                                            data-id="<?php echo $user['id']; ?>"
-                                                            data-username="<?php echo $user['username']; ?>">
+                                                            data-id="<?php echo e($user['id']); ?>"
+                                                            data-username="<?php echo e($user['username']); ?>">
                                                         <i class="fas fa-key"></i> Password
                                                     </button>
-                                                    <a href="?action=delete_user&id=<?php echo $user['id']; ?>" 
+                                                    <a href="?action=delete_user&id=<?php echo e($user['id']); ?>" 
                                                        class="btn btn-sm btn-outline-danger" 
                                                        onclick="return confirm('Are you sure you want to delete this user? This action cannot be undone.')">
                                                         <i class="fas fa-trash"></i> Delete
@@ -553,19 +612,19 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                         <tbody>
                                             <?php foreach($subjects as $subject): ?>
                                             <tr>
-                                                <td><?php echo $subject['id']; ?></td>
-                                                <td><?php echo $subject['name']; ?></td>
-                                                <td><?php echo $subject['code']; ?></td>
-                                                <td><?php echo $subject['description']; ?></td>
+                                                <td><?php echo e($subject['id']); ?></td>
+                                                <td><?php echo e($subject['name']); ?></td>
+                                                <td><?php echo e($subject['code']); ?></td>
+                                                <td><?php echo e($subject['description']); ?></td>
                                                 <td>
                                                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editSubjectModal"
-                                                            data-id="<?php echo $subject['id']; ?>"
-                                                            data-name="<?php echo $subject['name']; ?>"
-                                                            data-code="<?php echo $subject['code']; ?>"
-                                                            data-description="<?php echo $subject['description']; ?>">
+                                                            data-id="<?php echo e($subject['id']); ?>"
+                                                            data-name="<?php echo e($subject['name']); ?>"
+                                                            data-code="<?php echo e($subject['code']); ?>"
+                                                            data-description="<?php echo e($subject['description']); ?>">
                                                         <i class="fas fa-edit"></i> Edit
                                                     </button>
-                                                    <a href="?action=delete_subject&id=<?php echo $subject['id']; ?>" 
+                                                    <a href="?action=delete_subject&id=<?php echo e($subject['id']); ?>" 
                                                        class="btn btn-sm btn-outline-danger"
                                                        onclick="return confirm('Are you sure you want to delete this subject? This will also delete all grades associated with it.')">
                                                         <i class="fas fa-trash"></i> Delete
@@ -603,10 +662,10 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                         <tbody>
                                             <?php foreach($classrooms as $classroom): ?>
                                             <tr>
-                                                <td><?php echo $classroom['id']; ?></td>
-                                                <td><?php echo $classroom['name']; ?></td>
-                                                <td><?php echo $classroom['description']; ?></td>
-                                                <td><?php echo $classroom['first_name'] . ' ' . $classroom['last_name']; ?></td>
+                                                <td><?php echo e($classroom['id']); ?></td>
+                                                <td><?php echo e($classroom['name']); ?></td>
+                                                <td><?php echo e($classroom['description']); ?></td>
+                                                <td><?php echo e($classroom['first_name'] . ' ' . $classroom['last_name']); ?></td>
                                                 <td>
                                                     <button class="btn btn-sm btn-outline-primary">
                                                         <i class="fas fa-edit"></i> Edit
@@ -614,7 +673,7 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                                     <button class="btn btn-sm btn-outline-info">
                                                         <i class="fas fa-users"></i> View Students
                                                     </button>
-                                                    <a href="?action=delete_classroom&id=<?php echo $classroom['id']; ?>" 
+                                                    <a href="?action=delete_classroom&id=<?php echo e($classroom['id']); ?>" 
                                                        class="btn btn-sm btn-outline-danger"
                                                        onclick="return confirm('Are you sure you want to delete this classroom? This will also delete all grades and student associations.')">
                                                         <i class="fas fa-trash"></i> Delete
@@ -773,6 +832,18 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                     tabTrigger.show()
                 })
             });
+
+
+            // Open the tab named in the URL (e.g. admin.php#users)
+            if (window.location.hash) {
+                var hashTab = document.querySelector('a[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
+                if (hashTab) bootstrap.Tab.getOrCreateInstance(hashTab).show();
+            }
+
+            // Open the Users tab after a search/filter
+            <?php if ($u_q !== '' || $u_role !== ''): ?>
+            bootstrap.Tab.getOrCreateInstance(document.querySelector('a[href="#users"]')).show();
+            <?php endif; ?>
 
             // Edit User Modal
             var editUserModal = document.getElementById('editUserModal')

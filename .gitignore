@@ -1,0 +1,3 @@
+# Keep real DB credentials out of the public repo
+# (uncomment if you change the password in includes/conn.php)
+# includes/conn.php

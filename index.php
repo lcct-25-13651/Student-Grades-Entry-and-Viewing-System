@@ -7,14 +7,20 @@ if (isLoggedIn()) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+    $username = trim($_POST['username'] ?? '');
+    $password = $_POST['password'] ?? '';
     
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
-    $stmt->execute([$username]);
-    $user = $stmt->fetch();
+    $user = false;
+    if ($username === '' || $password === '') {
+        $error = "Please enter both username and password!";
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch();
+    }
     
     if ($user && password_verify($password, $user['password'])) {
+        session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['username'] = $user['username'];
         $_SESSION['role'] = $user['role'];
@@ -22,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['last_name'] = $user['last_name'];
         
         redirect(getDashboardUrl());
-    } else {
+    } elseif (!isset($error)) {
         $error = "Invalid username or password!";
     }
 }
@@ -73,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             
             <?php if (isset($error)): ?>
-                <div class="alert alert-danger"><?php echo $error; ?></div>
+                <div class="alert alert-danger"><?php echo e($error); ?></div>
             <?php endif; ?>
             
             <form method="POST">

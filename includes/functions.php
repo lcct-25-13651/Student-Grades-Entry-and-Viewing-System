@@ -53,7 +53,10 @@ function deleteUser($pdo, $user_id) {
     try {
         $pdo->beginTransaction();
         
-        // Delete user's grades first
+        // Delete user's attendance and grades first
+        $stmt = $pdo->prepare("DELETE FROM attendance WHERE student_id = ? OR teacher_id = ?");
+        $stmt->execute([$user_id, $user_id]);
+
         $stmt = $pdo->prepare("DELETE FROM grades WHERE student_id = ? OR teacher_id = ?");
         $stmt->execute([$user_id, $user_id]);
         
@@ -101,7 +104,10 @@ function deleteClassroom($pdo, $classroom_id) {
     try {
         $pdo->beginTransaction();
         
-        // Delete grades associated with this classroom
+        // Delete attendance and grades associated with this classroom
+        $stmt = $pdo->prepare("DELETE FROM attendance WHERE classroom_id = ?");
+        $stmt->execute([$classroom_id]);
+
         $stmt = $pdo->prepare("DELETE FROM grades WHERE classroom_id = ?");
         $stmt->execute([$classroom_id]);
         
@@ -139,7 +145,10 @@ function removeStudentFromClassroom($pdo, $classroom_id, $student_id) {
     try {
         $pdo->beginTransaction();
         
-        // Delete grades for this student in this classroom
+        // Delete attendance and grades for this student in this classroom
+        $stmt = $pdo->prepare("DELETE FROM attendance WHERE classroom_id = ? AND student_id = ?");
+        $stmt->execute([$classroom_id, $student_id]);
+
         $stmt = $pdo->prepare("DELETE FROM grades WHERE classroom_id = ? AND student_id = ?");
         $stmt->execute([$classroom_id, $student_id]);
         
@@ -165,5 +174,50 @@ function getClassroomStudents($pdo, $classroom_id) {
     ");
     $stmt->execute([$classroom_id]);
     return $stmt->fetchAll();
+}
+
+// ---------- Helpers added for security / validation ----------
+
+// Escape output (XSS protection)
+function e($value) {
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
+// Get a trimmed POST value
+function postVal($key) {
+    return isset($_POST[$key]) ? trim($_POST[$key]) : '';
+}
+
+// Get a trimmed GET value
+function getVal($key) {
+    return isset($_GET[$key]) ? trim($_GET[$key]) : '';
+}
+
+// Check a Y-m-d date string is a real date
+function isValidDate($date) {
+    $d = DateTime::createFromFormat('Y-m-d', $date);
+    return $d && $d->format('Y-m-d') === $date;
+}
+
+function deleteGradeLevel($pdo, $id) {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM classrooms WHERE grade_level_id = ?");
+    $stmt->execute([$id]);
+    if ($stmt->fetchColumn() > 0) {
+        return "Cannot delete: this grade level is still used by one or more classrooms.";
+    }
+    $stmt = $pdo->prepare("DELETE FROM grade_levels WHERE id = ?");
+    $stmt->execute([$id]);
+    return $stmt->rowCount() > 0 ? true : "Grade level not found.";
+}
+
+function deleteTerm($pdo, $id) {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM grades WHERE term_id = ?");
+    $stmt->execute([$id]);
+    if ($stmt->fetchColumn() > 0) {
+        return "Cannot delete: grades are already recorded under this term.";
+    }
+    $stmt = $pdo->prepare("DELETE FROM terms WHERE id = ?");
+    $stmt->execute([$id]);
+    return $stmt->rowCount() > 0 ? true : "Term not found.";
 }
 ?>
