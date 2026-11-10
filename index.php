@@ -45,7 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         .login-container {
             min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* Change the two colors below to restyle the background */
+            background:
+                radial-gradient(circle at 15% 20%, rgba(255,255,255,0.10) 0, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(255,255,255,0.08) 0, transparent 45%),
+                linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -64,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .logo i {
             font-size: 3rem;
-            color: #667eea;
+            color: #2c5364;
             margin-bottom: 1rem;
         }
     </style>
@@ -97,19 +101,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="password" class="form-control" name="password" required>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary w-100 mb-3">
+                <button type="submit" class="btn btn-primary w-100">
                     <i class="fas fa-sign-in-alt"></i> Sign In
                 </button>
             </form>
             
-            <div class="text-center">
-                <small class="text-muted">
-                    Demo Accounts:<br>
-                    Admin: admin / admin123<br>
-                    Teacher: teacher / teacher123<br>
-                    Student: student / student123<br>
-                </small>
-            </div>
         </div>
     </div>
 
