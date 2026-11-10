@@ -106,6 +106,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
+    if (isset($_POST['update_classroom'])) {
+        $classroom_id = postVal('classroom_id');
+        $name = postVal('name');
+        $description = postVal('description');
+        $teacher_id = postVal('teacher_id');
+        $grade_level_id = postVal('grade_level_id');
+
+        if (!ctype_digit($classroom_id) || $name === '' || strlen($name) > 100) {
+            $message = "Classroom name is required (max 100 characters).";
+            $message_type = "danger";
+        } elseif ($teacher_id !== '' && !ctype_digit($teacher_id)) {
+            $message = "Invalid teacher selected.";
+            $message_type = "danger";
+        } elseif ($grade_level_id !== '' && !ctype_digit($grade_level_id)) {
+            $message = "Invalid grade level selected.";
+            $message_type = "danger";
+        } else {
+            $valid = true;
+            if ($teacher_id !== '') {
+                $chk = $pdo->prepare("SELECT id FROM users WHERE id = ? AND role = 'teacher'");
+                $chk->execute([$teacher_id]);
+                if (!$chk->fetch()) {
+                    $valid = false;
+                    $message = "Selected teacher does not exist.";
+                    $message_type = "danger";
+                }
+            }
+            if ($valid && $grade_level_id !== '') {
+                $chk = $pdo->prepare("SELECT id FROM grade_levels WHERE id = ?");
+                $chk->execute([$grade_level_id]);
+                if (!$chk->fetch()) {
+                    $valid = false;
+                    $message = "Selected grade level does not exist.";
+                    $message_type = "danger";
+                }
+            }
+            if ($valid) {
+                $stmt = $pdo->prepare("UPDATE classrooms SET name = ?, description = ?, teacher_id = ?, grade_level_id = ? WHERE id = ?");
+                $stmt->execute([
+                    $name,
+                    $description,
+                    ($teacher_id === '' ? null : $teacher_id),
+                    ($grade_level_id === '' ? null : $grade_level_id),
+                    $classroom_id
+                ]);
+                $message = "Classroom updated successfully!";
+                $message_type = "success";
+            }
+        }
+    }
+
     if (isset($_POST['update_subject'])) {
         $subject_id = $_POST['subject_id'];
         $name = $_POST['name'];
@@ -193,6 +244,20 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                           FROM classrooms c 
                           LEFT JOIN users u ON c.teacher_id = u.id 
                           ORDER BY c.name")->fetchAll();
+$teachers = $pdo->query("SELECT id, first_name, last_name FROM users WHERE role = 'teacher' ORDER BY first_name, last_name")->fetchAll();
+$grade_level_options = $pdo->query("SELECT id, name FROM grade_levels ORDER BY name")->fetchAll();
+$classroom_students_map = [];
+$enrolled_rows = $pdo->query("SELECT cs.classroom_id, u.first_name, u.last_name, u.username, u.email
+                              FROM classroom_students cs
+                              JOIN users u ON u.id = cs.student_id
+                              ORDER BY u.first_name, u.last_name")->fetchAll();
+foreach ($enrolled_rows as $row) {
+    $classroom_students_map[$row['classroom_id']][] = [
+        'name'     => trim($row['first_name'] . ' ' . $row['last_name']),
+        'username' => $row['username'],
+        'email'    => $row['email']
+    ];
+}
 ?>
 
 <!DOCTYPE html>
@@ -651,10 +716,17 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
                                                 <td><?php echo e($classroom['description']); ?></td>
                                                 <td><?php echo e($classroom['first_name'] . ' ' . $classroom['last_name']); ?></td>
                                                 <td>
-                                                    <button class="btn btn-sm btn-outline-primary">
+                                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editClassroomModal"
+                                                            data-id="<?php echo e($classroom['id']); ?>"
+                                                            data-name="<?php echo e($classroom['name']); ?>"
+                                                            data-description="<?php echo e($classroom['description']); ?>"
+                                                            data-teacher="<?php echo e($classroom['teacher_id']); ?>"
+                                                            data-gradelevel="<?php echo e($classroom['grade_level_id']); ?>">
                                                         <i class="fas fa-edit"></i> Edit
                                                     </button>
-                                                    <button class="btn btn-sm btn-outline-info">
+                                                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#viewClassroomStudentsModal"
+                                                            data-id="<?php echo e($classroom['id']); ?>"
+                                                            data-name="<?php echo e($classroom['name']); ?>">
                                                         <i class="fas fa-users"></i> View Students
                                                     </button>
                                                     <a href="?action=delete_classroom&id=<?php echo e($classroom['id']); ?>" 
@@ -801,7 +873,129 @@ $classrooms = $pdo->query("SELECT c.*, u.first_name, u.last_name
         </div>
     </div>
 
+    <div class="modal fade" id="editClassroomModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Classroom</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" name="classroom_id" id="edit_classroom_id">
+                        <div class="mb-3">
+                            <label class="form-label">Classroom Name</label>
+                            <input type="text" class="form-control" name="name" id="edit_classroom_name" maxlength="100" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control" name="description" id="edit_classroom_description">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Teacher</label>
+                            <select class="form-select" name="teacher_id" id="edit_classroom_teacher">
+                                <option value="">No teacher</option>
+                                <?php foreach ($teachers as $t): ?>
+                                    <option value="<?php echo e($t['id']); ?>"><?php echo e(trim($t['first_name'] . ' ' . $t['last_name'])); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Grade Level</label>
+                            <select class="form-select" name="grade_level_id" id="edit_classroom_gradelevel">
+                                <option value="">No grade level</option>
+                                <?php foreach ($grade_level_options as $gl): ?>
+                                    <option value="<?php echo e($gl['id']); ?>"><?php echo e($gl['name']); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" name="update_classroom" class="btn btn-primary">Update Classroom</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="viewClassroomStudentsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Students in <span id="view_classroom_name"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody id="view_classroom_students"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var classroomStudents = <?php echo json_encode($classroom_students_map, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+
+            var editClassroomModal = document.getElementById('editClassroomModal');
+            editClassroomModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                this.querySelector('#edit_classroom_id').value = button.getAttribute('data-id');
+                this.querySelector('#edit_classroom_name').value = button.getAttribute('data-name');
+                this.querySelector('#edit_classroom_description').value = button.getAttribute('data-description');
+                this.querySelector('#edit_classroom_teacher').value = button.getAttribute('data-teacher');
+                this.querySelector('#edit_classroom_gradelevel').value = button.getAttribute('data-gradelevel');
+            });
+
+            var viewStudentsModal = document.getElementById('viewClassroomStudentsModal');
+            viewStudentsModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var list = classroomStudents[button.getAttribute('data-id')] || [];
+                var body = this.querySelector('#view_classroom_students');
+                this.querySelector('#view_classroom_name').textContent = button.getAttribute('data-name');
+                body.textContent = '';
+                if (list.length === 0) {
+                    var emptyRow = document.createElement('tr');
+                    var emptyCell = document.createElement('td');
+                    emptyCell.colSpan = 4;
+                    emptyCell.className = 'text-center text-muted';
+                    emptyCell.textContent = 'No students enrolled in this classroom.';
+                    emptyRow.appendChild(emptyCell);
+                    body.appendChild(emptyRow);
+                    return;
+                }
+                list.forEach(function (s, i) {
+                    var row = document.createElement('tr');
+                    [i + 1, s.name, s.username, s.email].forEach(function (value) {
+                        var cell = document.createElement('td');
+                        cell.textContent = value;
+                        row.appendChild(cell);
+                    });
+                    body.appendChild(row);
+                });
+            });
+
+            <?php if (isset($_POST['update_classroom'])): ?>
+            bootstrap.Tab.getOrCreateInstance(document.querySelector('a[href="#classrooms"]')).show();
+            <?php endif; ?>
+        });
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var triggerTabList = [].slice.call(document.querySelectorAll('a[data-bs-toggle="tab"]'))
